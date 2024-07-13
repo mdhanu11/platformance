@@ -14,12 +14,15 @@ class TableauService
 
     private $contentUrl = '';
 
+    private $siteUrl = '';
+
     public function __construct()
     {
         $this->baseUrl = config('services.tableau.site_url').'/api/'.config('services.tableau.api_version');
         $this->patSecret = config('services.tableau.superadmin_pat_secret');
         $this->patName = config('services.tableau.pat_name');
         $this->contentUrl = config('services.tableau.content_url');
+        $this->siteUrl = config('services.tableau.site_url');
     }
 
     public function loginToTableau(){
@@ -115,5 +118,13 @@ class TableauService
             ]);
             throw new CustomException('Tableau fetch workbooks by project failed',400);
         }
+    }
+    public function getViewUrl($viewContentUrl)
+    {
+        $url = "$this->siteUrl/#/site/$this->contentUrl/views/$viewContentUrl";
+        $modifiedurl = str_replace('/sheets', '', $url);
+        return response()->json(
+            ['viewUrl' => $modifiedurl]
+        );
     }
 }

@@ -28,4 +28,9 @@ class TableauProjectController extends Controller
         $siteId = $request->header('site-id');
         return $this->tableauService->getViewsByProject($tableauToken,$siteId,$projectName);
     }
+
+    public function getViewData(Request $request){
+        $viewContentUrl = $request->get('viewContentUrl');
+        return $this->tableauService->getViewUrl($viewContentUrl);
+    }
 }
