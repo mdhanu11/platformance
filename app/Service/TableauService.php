@@ -121,7 +121,7 @@ class TableauService
     }
     public function getViewUrl($viewContentUrl)
     {
-        $url = "$this->siteUrl/t/site/$this->contentUrl/views/$viewContentUrl";
+        $url = "$this->siteUrl/#/site/$this->contentUrl/views/$viewContentUrl";
         $modifiedurl = str_replace('/sheets', '', $url);
         return response()->json(
             ['viewUrl' => $modifiedurl]
