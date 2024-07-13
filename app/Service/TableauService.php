@@ -1,0 +1,119 @@
+<?php
+
+namespace App\Service;
+
+use App\Exceptions\CustomException;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+
+class TableauService
+{
+    private $baseUrl = '';
+    private $patSecret = '';
+    private $patName = '';
+
+    private $contentUrl = '';
+
+    public function __construct()
+    {
+        $this->baseUrl = config('services.tableau.site_url').'/api/'.config('services.tableau.api_version');
+        $this->patSecret = config('services.tableau.superadmin_pat_secret');
+        $this->patName = config('services.tableau.pat_name');
+        $this->contentUrl = config('services.tableau.content_url');
+    }
+
+    public function loginToTableau(){
+
+        $url = "$this->baseUrl/auth/signin";
+        $payload = [
+            'credentials' => [
+                'personalAccessTokenName' => $this->patName,
+                'personalAccessTokenSecret' => $this->patSecret,
+                'site' => [
+                    'contentUrl' => $this->contentUrl
+                ]
+            ]
+        ];
+
+        $response = Http::withHeaders([
+            'Content-Type' => 'application/json',
+            'Accept' => 'application/json',
+        ])->post($url, $payload);
+
+        if ($response->successful()) {
+            $token = $response['credentials']['token'];
+            $siteId = $response['credentials']['site']['id'];
+            $tableauUserId = $response['credentials']['user']['id'];
+
+            return [
+                'token' => $token,
+                'site_id' => $siteId,
+                'tableau_user_id' => $tableauUserId
+            ];
+        } else {
+            Log::error('Tableau sign-in failed', [
+                'response' => $response->body()
+            ]);
+            throw new CustomException('Tableau sign-in failed',400);
+        }
+    }
+
+    public function getProjects($token, $siteId)
+    {
+        $url = "$this->baseUrl/sites/{$siteId}/projects";
+
+        $response = Http::withHeaders([
+            'Content-Type' => 'application/json',
+            'Accept' => 'application/json',
+            'X-Tableau-Auth' => $token,
+        ])->get($url);
+
+        if ($response->successful()) {
+            return $response->json()['projects']['project'];
+        } else {
+            Log::error('Tableau fetch projects failed', [
+                'response' => $response->body()
+            ]);
+            throw new CustomException('Tableau fetch projects failed',400);
+        }
+    }
+
+    public function getWorkbooksByProject($token, $siteId, $projectName)
+    {
+        $url = "$this->baseUrl/sites/{$siteId}/workbooks?filter=projectName:eq:".$projectName;
+
+        $response = Http::withHeaders([
+            'Content-Type' => 'application/json',
+            'Accept' => 'application/json',
+            'X-Tableau-Auth' => $token,
+        ])->get($url);
+
+        if ($response->successful()) {
+            return $response->json()['workbooks']['workbook'];
+        } else {
+            Log::error('Tableau fetch workbooks by project failed', [
+                'response' => $response->body()
+            ]);
+            throw new CustomException('Tableau fetch workbooks by project failed',400);
+        }
+    }
+    public function getViewsByProject($token, $siteId, $projectName)
+    {
+        $url = "$this->baseUrl/sites/{$siteId}/views?filter=projectName:eq:".$projectName;
+
+        $response = Http::withHeaders([
+            'Content-Type' => 'application/json',
+            'Accept' => 'application/json',
+            'X-Tableau-Auth' => $token,
+        ])->get($url);
+
+        if ($response->successful()) {
+            return $response->json()['views']['view'];
+        } else {
+            Log::error('Tableau fetch workbooks by project failed', [
+                'response' => $response->body()
+            ]);
+            throw new CustomException('Tableau fetch workbooks by project failed',400);
+        }
+    }
+}
