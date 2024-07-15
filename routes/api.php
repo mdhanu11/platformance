@@ -12,6 +12,7 @@ Route::group(['middleware' => ['auth:sanctum','tableau.token']], function() {
     Route::get('get-workbooks/{projectName}', [TableauProjectController::class, 'getWorkbooks']);
     Route::get('get-views/{projectName}', [TableauProjectController::class, 'getViews']);
     Route::post('get-view', [TableauProjectController::class, 'getViewData']);
+    Route::get('get-view/{viewId}', [TableauProjectController::class, 'getViewDataWithViewId']);
 });
 
 Route::get('/user', function (Request $request) {

@@ -121,10 +121,49 @@ class TableauService
     }
     public function getViewUrl($viewContentUrl)
     {
-        $url = "$this->siteUrl/#/site/$this->contentUrl/views/$viewContentUrl";
-        $modifiedurl = str_replace('/sheets', '', $url);
+
+        $response = Http::asForm()->post("$this->siteUrl/trusted", [
+            'username' => "mdhanu11@gmail.com",
+        ]);
+        print_r($response->body());
+        if ($response->failed()) {
+            return response()->json(['error' => 'Failed to get Tableau token'], 500);
+        }
+
+        $token = $response->body();
+
+        $viewUrl = "{$this->siteUrl}/trusted/{$token}/t/{$this->contentUrl}/views/{$viewContentUrl}?:embed=yes";
+
+//        $url = "$this->siteUrl/#/site/$this->contentUrl/views/$viewContentUrl";
+//        $modifiedurl = str_replace('/sheets', '', $viewUrl);
         return response()->json(
-            ['viewUrl' => $modifiedurl]
+            ['viewUrl' => $viewUrl]
         );
+    }
+    public function getViewsByViewId($token, $siteId, $viewId)
+    {
+        $url = "$this->baseUrl/sites/$siteId/views/$viewId/data";
+//        print_r($url);
+
+        $response = Http::withHeaders([
+            'Content-Type' => 'application/json',
+            'Accept' => 'application/json',
+            'X-Tableau-Auth' => $token,
+        ])->get($url);
+
+//        print_r(json_encode($response->status()));
+        if ($response->successful()) {
+//            print_r($response->body());
+            return response()->json(
+                [
+                    'data' => $response->body()
+                ]
+            );
+        } else {
+            Log::error('Tableau fetch view failed', [
+                'response' => $response->body()
+            ]);
+            throw new CustomException('Tableau fetch view failed',400);
+        }
     }
 }
